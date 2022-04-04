@@ -5,12 +5,12 @@ func routes(_ app: Application) throws {
     
 //    exam functions
     
-    app.post("exam"){req -> EventLoopFuture<ExamModel> in
+    app.post("exam"){req -> ExamModel in
 
-        let exam = try req.content.decode(ExamModel.self)
-        return exam.create(on: req.db).map{
-            exam
-        }
+        let data = try req.content.decode(ExamModel.self)
+        let exam = ExamModel(id: data.id, name: data.name, course: data.course, exam_id: data.exam_id)
+         try await exam.save(on: req.db)
+        return exam
     }
     
     app.get("exam"){req -> [ExamModel] in
@@ -33,7 +33,7 @@ func routes(_ app: Application) throws {
         guard let newId = req.parameters.get("newId", as: String.self) else {
             throw Abort(.badRequest)
         }
-        
+
         ExamModel.query(on: req.db)
                     .set(\.$exam_id, to: newId)
                     .filter(\.$exam_id == oldId).update()
@@ -60,12 +60,11 @@ func routes(_ app: Application) throws {
    
     
 //    student functions
-    app.post("student"){req -> EventLoopFuture<StudentModel> in
+    app.post("student"){req -> StudentModel in
 
         let student = try req.content.decode(StudentModel.self)
-        return student.create(on: req.db).map{
-            student
-        }
+        try await student.save(on: req.db)
+        return student
     }
     app.get("student"){req -> [StudentModel] in
         return try await StudentModel.query(on: req.db).all()
@@ -87,7 +86,7 @@ func routes(_ app: Application) throws {
         guard let newId = req.parameters.get("newId", as: String.self) else {
             throw Abort(.badRequest)
         }
-        
+
         StudentModel.query(on: req.db)
                     .set(\.$student_id, to: newId)
                     .filter(\.$student_id == oldId).update()
@@ -110,12 +109,11 @@ func routes(_ app: Application) throws {
     
     
 //    studentExam functions
-    app.post("studentExam"){req -> EventLoopFuture<StudentExamsModel> in
+    app.post("studentExam"){req -> StudentExamsModel in
 
         let studentExam = try req.content.decode(StudentExamsModel.self)
-        return studentExam.create(on: req.db).map{
-            studentExam
-        }
+        try await studentExam.save(on: req.db)
+        return studentExam
     }
     
     app.get("studentExam"){req -> [StudentExamsModel] in
@@ -143,6 +141,7 @@ func routes(_ app: Application) throws {
         guard let eval = req.parameters.get("vote", as: Int.self) else {
             throw Abort(.badRequest)
         }
+
         StudentExamsModel.query(on: req.db)
             .set(\.$evaluation, to: eval)
                     .filter(\.$student_id == oldId)
@@ -165,5 +164,4 @@ func routes(_ app: Application) throws {
     }
     
     
-//    try app.register(collection: TodoController())
 }
